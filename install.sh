@@ -1,30 +1,23 @@
 #!/bin/bash
-echo "--------------------------- Cấu hình máy chủ ---------------------------"
-echo "Số lõi CPU: " $(nproc --all) "CORE"
-echo -n "Dung lượng RAM: " && free -h | awk '/Mem/ {sub(/Gi/, " GB", $2); print $2}'
-echo "Dung lượng ổ cứng:" $(df -B 1G --total | awk '/total/ {print $2}' | tail -n 1) "GB"
+echo "--------------------------- Konfigurasi Server ---------------------------"
+echo "Jumlah Core CPU: " $(nproc --all) "CORE"
+echo -n "Kapasitas RAM: " && free -h | awk '/Mem/ {sub(/Gi/, " GB", $2); print $2}'
+echo "Kapasitas Penyimpanan:" $(df -B 1G --total | awk '/total/ {print $2}' | tail -n 1) "GB"
 echo "------------------------------------------------------------------------"
 
-
 echo "--------------------------- BASH SHELL TITAN ---------------------------"
-# Lấy giá trị hash từ terminal
-echo "Nhap ma Hash cua ban (Identity code): "
+# Ambil nilai hash dari terminal
+echo "Masukkan kode Hash Anda (Identity code): "
 read hash_value
 
-# Kiểm tra nếu hash_value là chuỗi rỗng (người dùng chỉ nhấn Enter) thì dừng chương trình
+# Periksa jika hash_value adalah string kosong (pengguna hanya menekan Enter) maka hentikan program
 if [ -z "$hash_value" ]; then
-    echo "Không có giá trị hash được nhập. Dừng chương trình."
+    echo "Tidak ada nilai hash yang dimasukkan. Menghentikan program."
     exit 1
 fi
 
 
-read -p "Nhập số core CPU (mặc định là 1 CORE): " cpu_core
-cpu_core=${cpu_core:-1}
-
-read -p "Nhập dung lượng RAM (mặc định là 2 GB): " memory_size
-memory_size=${memory_size:-2}
-
-read -p "Nhập dung lượng lưu trữ (mặc định là 72 GB): " storage_size
+read -p "Masukkan kapasitas penyimpanan (default adalah 72 GB): " storage_size
 storage_size=${storage_size:-72}
 
 service_content="
@@ -54,7 +47,6 @@ sudo mv /usr/local/titan_v0.1.18_linux_amd64 /usr/local/titan
 
 rm titan_v0.1.18_linux_amd64.tar.gz
 
-
 if [ ! -f ~/.bash_profile ]; then
     echo 'export PATH=$PATH:/usr/local/titan' >> ~/.bash_profile
     source ~/.bash_profile
@@ -63,52 +55,48 @@ elif ! grep -q '/usr/local/titan' ~/.bash_profile; then
     source ~/.bash_profile
 fi
 
-# Chạy titan-edge daemon trong nền
+# Jalankan titan-edge daemon di latar belakang
 (titan-edge daemon start --init --url https://test-locator.titannet.io:5000/rpc/v0 &) &
 daemon_pid=$!
 
-echo "PID của titan-edge daemon: $daemon_pid"
+echo "PID dari titan-edge daemon: $daemon_pid"
 
-# Chờ 10 giây để đảm bảo rằng daemon đã khởi động thành công
+# Tunggu 10 detik untuk memastikan daemon telah berhasil dimulai
 sleep 15
 
-# Chạy titan-edge bind trong nền
+# Jalankan titan-edge bind di latar belakang
 (titan-edge bind --hash="$hash_value" https://api-test1.container1.titannet.io/api/v2/device/binding &) &
 bind_pid=$!
 
-echo "PID của titan-edge bind: $bind_pid"
+echo "PID dari titan-edge bind: $bind_pid"
 
-# Chờ cho quá trình bind kết thúc
+# Tunggu proses bind selesai
 wait $bind_pid
 
 sleep 15
 
-# Tiến hành các cài đặt khác
+# Lakukan pengaturan lainnya
 
 config_file="/root/.titanedge/config.toml"
 if [ -f "$config_file" ]; then
     sed -i "s/#StorageGB = 2/StorageGB = $storage_size/" "$config_file"
-    echo "Đã thay đổi kích thước lưu trữ cơ sở dữ liệu thành $storage_size GB."
-    sed -i "s/#MemoryGB = 1/MemoryGB = $memory_size/" "$config_file"
-    echo "Đã thay đổi kích thước memory liệu thành $memory_size GB."
-    sed -i "s/#Cores = 1/Cores = $cpu_core/" "$config_file"
-    echo "Đã thay đổi core cpu liệu thành $cpu_core Core."
+    echo "Telah mengubah kapasitas penyimpanan database menjadi $storage_size GB."
 else
-    echo "Lỗi: Tệp cấu hình $config_file không tồn tại."
+    echo "Kesalahan: File konfigurasi $config_file tidak ada."
 fi
 
 echo "$service_content" | sudo tee /etc/systemd/system/titand.service > /dev/null
 
-# Dừng các tiến trình liên quan đến titan-edge
+# Hentikan proses yang terkait dengan titan-edge
 pkill titan-edge
 
-# Cập nhật systemd
+# Perbarui systemd
 sudo systemctl daemon-reload
 
-# Kích hoạt và khởi động titand.service
+# Aktifkan dan mulai titand.service
 sudo systemctl enable titand.service
 sudo systemctl start titand.service
 
 sleep 8
-# Hiển thị thông tin và cấu hình của titan-edge
+# Tampilkan informasi dan konfigurasi dari titan-edge
 sudo systemctl status titand.service && titan-edge config show && titan-edge info
