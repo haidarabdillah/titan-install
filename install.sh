@@ -17,9 +17,6 @@ if [ -z "$hash_value" ]; then
 fi
 
 
-# read -p "Masukkan kapasitas penyimpanan (default adalah 72 GB): " storage_size
-# storage_size=${storage_size:-72}
-
 service_content="
 [Unit]
 Description=Titan Node
