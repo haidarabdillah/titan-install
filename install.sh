@@ -17,8 +17,8 @@ if [ -z "$hash_value" ]; then
 fi
 
 
-read -p "Masukkan kapasitas penyimpanan (default adalah 72 GB): " storage_size
-storage_size=${storage_size:-72}
+# read -p "Masukkan kapasitas penyimpanan (default adalah 72 GB): " storage_size
+# storage_size=${storage_size:-72}
 
 service_content="
 [Unit]
@@ -79,8 +79,8 @@ sleep 15
 
 config_file="/root/.titanedge/config.toml"
 if [ -f "$config_file" ]; then
-    sed -i "s/#StorageGB = 2/StorageGB = $storage_size/" "$config_file"
-    echo "Telah mengubah kapasitas penyimpanan database menjadi $storage_size GB."
+    sed -i "s/#StorageGB = 2/StorageGB = 21/" "$config_file"
+    echo "Telah mengubah kapasitas penyimpanan database menjadi 21 GB."
 else
     echo "Kesalahan: File konfigurasi $config_file tidak ada."
 fi
