@@ -16,7 +16,6 @@ if [ -z "$hash_value" ]; then
     exit 1
 fi
 
-
 service_content="
 [Unit]
 Description=Titan Node
